@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.*;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -32,8 +33,12 @@ public class Similarity {
 				.readGraph("data/web-Stanford.txt");
 		g2.removeVertex("1");
 		Set<String> v = g1.vertexSet();
-		System.out.println("Vertex Edge Overlap between the Graphs is  "
-				+ h.vertexEdgeOverlap(g1, g2));
+		//System.out.println("Vertex Edge Overlap between the Graphs is  "
+		//		+ h.vertexEdgeOverlap(g1, g2));
+		HashMap<String,Double> ranking = h.PageRankTopology(g1);
+		System.out.println("Ranking is "+ ranking.get("6548"));
+		
+		
 
 	}
 
@@ -109,6 +114,42 @@ public class Similarity {
 				+ commonVertices + " Answer " + vertexEdgeOverlap);
 
 		return vertexEdgeOverlap;
+
+	}
+
+	public HashMap<String, Double> PageRankTopology(
+			DirectedGraph<String, DefaultEdge> topology) {
+		HashMap<String, Double> ranking = new HashMap<String, Double>();
+
+		for (String vertex : topology.vertexSet()) {
+			double value;
+			if(topology.outDegreeOf(vertex)==0)
+				value = 0;
+			else
+				value = (double)(1/topology.outDegreeOf(vertex));
+			ranking.put(vertex,  value);
+		}
+
+		for (int i = 1; i < 20; i++) {
+			HashMap<String, Double> lasIterationRanking = new HashMap<String, Double>(
+					ranking);
+			for (String vertex : topology.vertexSet()) {
+				Set<DefaultEdge> inbound = topology.incomingEdgesOf(vertex);
+				double iterationRanking = 0.0;
+				for (DefaultEdge defaultEdge : inbound) {
+					String inboundVertex = vertex.equals(topology
+							.getEdgeSource(defaultEdge)) ? topology
+							.getEdgeTarget(defaultEdge) : topology
+							.getEdgeSource(defaultEdge);
+
+					iterationRanking += lasIterationRanking.get(inboundVertex)
+							/ topology.outDegreeOf(inboundVertex);
+				}
+				ranking.put(vertex, iterationRanking);
+			}
+		}
+
+		return ranking;
 
 	}
 

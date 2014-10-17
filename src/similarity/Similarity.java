@@ -6,9 +6,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.*;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
@@ -32,14 +35,53 @@ public class Similarity {
 		DirectedGraph<String, DefaultEdge> g2 = h
 				.readGraph("data/web-Stanford.txt");
 		g2.removeVertex("1");
-		Set<String> v = g1.vertexSet();
+		
 		//System.out.println("Vertex Edge Overlap between the Graphs is  "
 		//		+ h.vertexEdgeOverlap(g1, g2));
-		HashMap<String,Double> ranking = h.PageRankTopology(g1);
-		System.out.println("Ranking is "+ ranking.get("6548"));
+		HashMap<String,Double> pageRank1 = h.PageRankTopology(g1);
+		HashMap<String,Double> pageRank2 = h.PageRankTopology(g2);
+		HashMap<String,Integer> ranking1 = h.rank(pageRank1);  //Sorts the values 
+		HashMap<String,Integer> ranking2 = h.rank(pageRank2);
 		
 		
+		
+		}
+	
+	public double VertexRanking(HashMap<String,Integer> ranking1 ,HashMap<String,Integer> ranking2,DirectedGraph<String, DefaultEdge> g1,
+			DirectedGraph<String, DefaultEdge> g2,HashMap<String,Double> pageRank1,HashMap<String,Double> pageRank2){
+		double sum =0.0;
+		Set<String> nodes1 = g1.vertexSet();
+		for (String s : nodes1) {
+			if (g2.containsVertex(s))
+				sum += (Math.pow((double)(ranking1.get(s)-ranking2.get(s)),2.0))*(pageRank1.get(s)+pageRank2.get(s))/2; 
+			else
+				sum += (Math.pow((double)(ranking1.get(s)-g2.vertexSet().size()-1),2.0))*pageRank1.get(s);
+					
+		}
+		
+		Set<String> nodes2 = g2.vertexSet();
+		for (String s : nodes2) {
+			if (!g1.containsVertex(s))
+				sum += (Math.pow((double)(g1.vertexSet().size()+1-ranking2.get(s)),2.0))*pageRank2.get(s); 
+		}
+		
+		sum*=2.0;
+		
+		return sum;//Has to be changed
+		
+	}
+	
+	public HashMap<String,Integer> rank(HashMap<String,Double> ranking){
+		TreeMap<String,Double>  sorted_ranking = this.SortedList(ranking);
+		int i =1;
+		HashMap<String,Integer> ranking_v = new HashMap<String,Integer>();
+		for(Map.Entry<String,Double> entry : sorted_ranking.entrySet()) {
+			  String key = entry.getKey();
+			  ranking_v.put(key,i);
+			  i++;
+		}
 
+		return ranking_v;
 	}
 
 	public DirectedGraph<String, DefaultEdge> readGraph(String filename) {
@@ -152,5 +194,29 @@ public class Similarity {
 		return ranking;
 
 	}
+	
+	public TreeMap<String,Double> SortedList(HashMap<String,Double> ranking){
+		ValueComparator bvc =  new ValueComparator(ranking);
+        TreeMap<String,Double> sorted_map = new TreeMap<String,Double>(bvc);
+        sorted_map.putAll(ranking);
+        return sorted_map;
+	}
 
+}
+
+class ValueComparator implements Comparator<String> {
+
+    Map<String, Double> base;
+    public ValueComparator(Map<String, Double> base) {
+        this.base = base;
+    }
+
+    // Note: this comparator imposes orderings that are inconsistent with equals.    
+    public int compare(String a, String b) {
+        if (base.get(a) <= base.get(b)) {
+            return -1;
+        } else {
+            return 1;
+        } // returning 0 would merge keys
+    }
 }

@@ -24,16 +24,22 @@ public class SimHash {
 		DirectedGraph<String, DefaultEdge> g1 = h
 				.readGraph("data/web-Stanford.txt");
 	
-
+		System.out.println("datasets read");
 		HashMap<String, Double> pageRank1 = h.PageRankTopology(g1);
-		HashMap<String, Double> pageRank2 = h.PageRankTopology(g2);
-		SimHash simhash = new SimHash();
-		HashMap<String,Double> features1= simhash.weightedFeaturesBaseline(g1, pageRank1);
-		boolean[] signature1 = simhash.getSignature(features1);
-		HashMap<String,Double> features2= simhash.weightedFeaturesBaseline(g2, pageRank2);
-		boolean[] signature2 = simhash.getSignature(features2);
-		Double similarity = simhash.signatureSimilarity(signature1, signature2);
-		System.out.println("Similarity = "+ similarity);
+		System.out.println("Page Rank 1 done");
+//		HashMap<String, Double> pageRank2 = h.PageRankTopology(g2);
+//		System.out.println("Page Rank 2 done");
+//		SimHash simhash = new SimHash();
+//		
+//		System.out.println("Starting extracting features 1");
+//		List<List<Object>> features1= simhash.weightedFeaturesBaseline(g1, pageRank1);
+//		boolean[] signature1 = simhash.getSignature(features1);
+//		System.out.println("Starting extracting features 2");
+//		List<List<Object>> features2= simhash.weightedFeaturesBaseline(g2, pageRank2);
+//		boolean[] signature2 = simhash.getSignature(features2);
+//		System.out.println("Similarity Computation start");
+//		Double similarity = simhash.signatureSimilarity(signature1, signature2);
+//		System.out.println("Similarity = "+ similarity);
 		
 
     }
@@ -57,15 +63,14 @@ public class SimHash {
         return bits;
     }
 
-    public boolean[] getSignature(HashMap<String,Double> features) {
-        Object[] featureKeys = features.keySet().toArray();
+    public boolean[] getSignature(List<List<Object>> features) {
         double[] fingerprintDoubles = new double[DIGEST_SIZE];
-        List<byte[]> digests = new ArrayList<byte[]>();
-        for (int i = 0; i < featureKeys.length; ++i) {
+        for (List<Object> feature : features) {
+        	String featureKey = (String) feature.get(0);
+        	double featureValue = (Double) feature.get(1);
             byte[] featureKeyBytes = null;
-            double featureValue = features.get(featureKeys[i]);
             try {
-                featureKeyBytes = ((String) featureKeys[i]).getBytes("UTF-8");
+                featureKeyBytes = featureKey.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
                 e.getMessage();
             }
@@ -73,7 +78,7 @@ public class SimHash {
             byte[] digest = messageDigest.digest(featureKeyBytes);
             boolean[] digestBits = byteArrayToBitArray(digest);
             for (int j = 0; j < DIGEST_SIZE; ++j) {
-                fingerprintDoubles[j] += digestBits[i] ? featureValue : -1 * featureValue;
+                fingerprintDoubles[j] += digestBits[j] ? featureValue : -1 * featureValue;
             }
         }
         boolean[] fingerprint = new boolean[DIGEST_SIZE];
@@ -84,14 +89,16 @@ public class SimHash {
         return fingerprint;
     }
     
-    public HashMap<String, Double> weightedFeaturesBaseline(
+    public List<List<Object>> weightedFeaturesBaseline(
 			DirectedGraph<String, DefaultEdge> g,
 			HashMap<String, Double> pageRank) {
-		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
+		List<List<Object>> weightFeatures = new ArrayList<List<Object>>();
 		Set<String> nodeSet = g.vertexSet();
 		for (String s : nodeSet) {
-
-			weightFeatures.put(s, pageRank.get(s));
+			List<Object> entry = new ArrayList<Object>();
+			entry.add(s);
+			entry.add(pageRank.get(s));
+			weightFeatures.add(entry);
 		}
 
 		Set<DefaultEdge> edgeset = g.edgeSet();
@@ -99,36 +106,17 @@ public class SimHash {
 		for (DefaultEdge ed1 : edgeset) {
 			String v1 = g.getEdgeSource(ed1);
 			String v2 = g.getEdgeTarget(ed1);
-
-			weightFeatures.put(v1 + "-" + v2,
-					pageRank.get(v1) / g.outDegreeOf(v1));
+			List<Object> entry = new ArrayList<Object>();
+			String s = v1 + "-" + v2;
+			entry.add(s);
+			entry.add(pageRank.get(s)/g.outDegreeOf(v1));
+			weightFeatures.add(entry);
 		}
 
 		return weightFeatures;
 	}
 	
-	public HashMap<String, Double> weightedFeaturesNew(
-			DirectedGraph<String, DefaultEdge> g,
-			HashMap<String, Double> pageRank, Double alpha) {
-		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
-		Set<String> nodeSet = g.vertexSet();
-		for (String s : nodeSet) {
-
-			weightFeatures.put(s, alpha*pageRank.get(s)+(1-alpha)*g.outDegreeOf(s));
-		}
-
-		Set<DefaultEdge> edgeset = g.edgeSet();
-
-		for (DefaultEdge ed1 : edgeset) {
-			String v1 = g.getEdgeSource(ed1);
-			String v2 = g.getEdgeTarget(ed1);
-
-			weightFeatures.put(v1 + "-" + v2,
-					pageRank.get(v1) / g.outDegreeOf(v1));
-		}
-
-		return weightFeatures;
-	}
+	
 	
 	
 	

@@ -19,15 +19,7 @@ import org.jgrapht.graph.*;
 
 public class Similarity {
 
-	private Similarity() {
-	}
-
-	/***
-	 ** The starting point for the demo.
-	 ** 
-	 ** @param args
-	 *            ignored.
-	 */
+	
 	public static void main(String[] args) {
 		Similarity h = new Similarity();
 
@@ -61,17 +53,12 @@ public class Similarity {
 		int numberOfNodes = 0;
 		Double maxPageRank = 0.0;
 
-		
-
-		
-	
 		for (String s : nodes1) {
 			Double pageRank;
 			if (g2.containsVertex(s)) {
 				pageRank = (pageRank1.get(s) + pageRank2.get(s)) / 2;
 				sum += (Math.pow((double) (ranking1.get(s) - ranking2.get(s)),
 						2.0)) * pageRank;
-				
 
 			}
 
@@ -83,11 +70,11 @@ public class Similarity {
 						* pageRank;
 
 			}
-			if(pageRank>maxPageRank)
+			if (pageRank > maxPageRank)
 				maxPageRank = pageRank;
 			numberOfNodes++;
 
-			//System.out.println(" Sum " + sum);
+			// System.out.println(" Sum " + sum);
 
 		}
 		Set<String> nodes2 = g2.vertexSet();
@@ -96,20 +83,19 @@ public class Similarity {
 				Double pageRank = pageRank2.get(s);
 				sum += Math.pow(
 						(double) (g1.vertexSet().size() + 1 - ranking2.get(s)),
-						2.0) * pageRank ;
-				if(pageRank>maxPageRank)
+						2.0) * pageRank;
+				if (pageRank > maxPageRank)
 					maxPageRank = pageRank;
 				numberOfNodes++;
-				//System.out.println(" Sum " + sum);
+				// System.out.println(" Sum " + sum);
 
 			}
 		}
-		
 
-		
-		 Double D = ((numberOfNodes * (Math.pow(numberOfNodes,2.0) - 1)) / 3.0)* maxPageRank;
-		 
-		  sum = 2 * sum/D;
+		Double D = ((numberOfNodes * (Math.pow(numberOfNodes, 2.0) - 1)) / 3.0)
+				* maxPageRank;
+
+		sum = 2 * sum / D;
 
 		System.out.println("Number of nodes " + numberOfNodes + " Sum " + sum
 				+ " Max page Rank " + maxPageRank);
@@ -249,6 +235,64 @@ public class Similarity {
 		sorted_map.putAll(ranking);
 		return sorted_map;
 	}
+
+	public HashMap<String, Double> weightedFeaturesBaseline(
+			DirectedGraph<String, DefaultEdge> g,
+			HashMap<String, Double> pageRank) {
+		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
+		Set<String> nodeSet = g.vertexSet();
+		for (String s : nodeSet) {
+
+			weightFeatures.put(s, pageRank.get(s));
+		}
+
+		Set<DefaultEdge> edgeset = g.edgeSet();
+
+		for (DefaultEdge ed1 : edgeset) {
+			String v1 = g.getEdgeSource(ed1);
+			String v2 = g.getEdgeTarget(ed1);
+
+			weightFeatures.put(v1 + "-" + v2,
+					pageRank.get(v1) / g.outDegreeOf(v1));
+		}
+
+		return weightFeatures;
+	}
+	
+	public HashMap<String, Double> weightedFeaturesNew(
+			DirectedGraph<String, DefaultEdge> g,
+			HashMap<String, Double> pageRank, Double alpha) {
+		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
+		Set<String> nodeSet = g.vertexSet();
+		for (String s : nodeSet) {
+
+			weightFeatures.put(s, alpha*pageRank.get(s)+(1-alpha)*g.outDegreeOf(s));
+		}
+
+		Set<DefaultEdge> edgeset = g.edgeSet();
+
+		for (DefaultEdge ed1 : edgeset) {
+			String v1 = g.getEdgeSource(ed1);
+			String v2 = g.getEdgeTarget(ed1);
+
+			weightFeatures.put(v1 + "-" + v2,
+					pageRank.get(v1) / g.outDegreeOf(v1));
+		}
+
+		return weightFeatures;
+	}
+	
+	
+	
+	public Double signatureSimilarity(Boolean[] sequence1, Boolean[] sequence2){
+		int intersection=0;
+		for(int i=0;i<sequence1.length;i++)
+			intersection = (sequence1[i]==sequence2[i])?(intersection+1):intersection ;
+		return (Double)(intersection+ 0.0/sequence1.length);
+	}
+	
+	
+	
 
 }
 

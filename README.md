@@ -1,2 +1,8 @@
 Indexing-Project
 ================
+
+- Done as part of the course "Searching and Indexing High Dimensional Datasets" in Fall 2014
+- Implemented several similarity measures between Webgraphs including Signature Similarity
+- Proposed two new types of anomalies which occur during the time of crawling the web
+- Suggested two modifications to the Signature Similarity Scheme which takes into account structural properties of vertex neighbourhood
+- Used the Stanford Webgraph for evaluating effectiveness of the proposed methods.

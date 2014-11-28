@@ -19,28 +19,46 @@ import org.jgrapht.graph.*;
 
 public class Similarity {
 
-	
 	public static void main(String[] args) {
 		Similarity h = new Similarity();
+		String values[] = new String[] { "0.01", "0.05", "0.1", "0.2", "0.5",
+				"0.8" };
 
-		DirectedGraph<String, DefaultEdge> g2 = h
-				.readGraph("data/exchanged_connections_old/exchanged_connections_0.8.txt");
-		DirectedGraph<String, DefaultEdge> g1 = h
-				.readGraph("data/web-Stanford.txt");
-		// g2.removeVertex("1");
+		for (int i = 0; i < values.length; i++) {
+			String filename = "data/missing_connections_random_" + values[i]+ ".txt";
 
-		// System.out.println("Vertex Edge Overlap between the Graphs is  "
-		// + h.vertexEdgeOverlap(g1, g2));
+			System.out.println("FILENAME "+ filename);
+			DirectedGraph<String, DefaultEdge> g2 = h.readGraph(filename);
+			DirectedGraph<String, DefaultEdge> g1 = h
+					.readGraph("data/web-Stanford.txt");
 
-		HashMap<String, Double> pageRank1 = h.PageRankTopology(g1);
-		HashMap<String, Double> pageRank2 = h.PageRankTopology(g2);
-		HashMap<String, Integer> ranking1 = h.rank(pageRank1); // Sorts the
-																// values
-		HashMap<String, Integer> ranking2 = h.rank(pageRank2);
-		System.out.println("Vertex Ranking Overlap between the Graphs is  "
-				+ h.VertexRanking(ranking1, ranking2, g1, g2, pageRank1,
-						pageRank2));
+			System.out.println("Vertex Edge Overlap between the Graphs is  "
+					+ h.vertexEdgeOverlap(g1, g2));
 
+			HashMap<String, Double> pageRank1 = h.PageRankTopology(g1);
+			HashMap<String, Double> pageRank2 = h.PageRankTopology(g2);
+			HashMap<String, Integer> ranking1 = h.rank(pageRank1); // Sorts the
+																	// values
+			HashMap<String, Integer> ranking2 = h.rank(pageRank2);
+			System.out.println("Vertex Ranking Overlap between the Graphs is  "
+					+ h.VertexRanking(ranking1, ranking2, g1, g2, pageRank1,
+							pageRank2));
+
+		}
+
+	}
+
+	public double maxPageRank(HashMap<String, Double> pageRank1) {
+		Double maxPageRank = 0.0;
+		Double pageRank;
+		for (Map.Entry<String, Double> entry : pageRank1.entrySet()) {
+			pageRank = entry.getValue();
+			if (pageRank > maxPageRank)
+				maxPageRank = pageRank;
+
+		}
+
+		return maxPageRank;
 	}
 
 	public double VertexRanking(HashMap<String, Integer> ranking1,
@@ -111,6 +129,19 @@ public class Similarity {
 		for (Map.Entry<String, Double> entry : sorted_ranking.entrySet()) {
 			String key = entry.getKey();
 			ranking_v.put(key, i);
+			i++;
+		}
+
+		return ranking_v;
+	}
+
+	public HashMap<Integer, Integer> rankReverse(HashMap<String, Double> ranking) {
+		TreeMap<String, Double> sorted_ranking = this.SortedList(ranking);
+		int i = 1;
+		HashMap<Integer, Integer> ranking_v = new HashMap<Integer, Integer>();
+		for (Map.Entry<String, Double> entry : sorted_ranking.entrySet()) {
+			String key = entry.getKey();
+			ranking_v.put(i, Integer.parseInt(key));
 			i++;
 		}
 
@@ -235,65 +266,6 @@ public class Similarity {
 		sorted_map.putAll(ranking);
 		return sorted_map;
 	}
-
-	public HashMap<String, Double> weightedFeaturesBaseline(
-			DirectedGraph<String, DefaultEdge> g,
-			HashMap<String, Double> pageRank) {
-		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
-		Set<String> nodeSet = g.vertexSet();
-		for (String s : nodeSet) {
-
-			weightFeatures.put(s, pageRank.get(s));
-		}
-
-		Set<DefaultEdge> edgeset = g.edgeSet();
-
-		for (DefaultEdge ed1 : edgeset) {
-			String v1 = g.getEdgeSource(ed1);
-			String v2 = g.getEdgeTarget(ed1);
-
-			weightFeatures.put(v1 + "-" + v2,
-					pageRank.get(v1) / g.outDegreeOf(v1));
-		}
-
-		return weightFeatures;
-	}
-	
-	public HashMap<String, Double> weightedFeaturesNew(
-			DirectedGraph<String, DefaultEdge> g,
-			HashMap<String, Double> pageRank, Double alpha) {
-		HashMap<String, Double> weightFeatures = new HashMap<String, Double>();
-		Set<String> nodeSet = g.vertexSet();
-		for (String s : nodeSet) {
-
-			weightFeatures.put(s, alpha*pageRank.get(s)+(1-alpha)*g.outDegreeOf(s));
-		}
-
-		Set<DefaultEdge> edgeset = g.edgeSet();
-
-		for (DefaultEdge ed1 : edgeset) {
-			String v1 = g.getEdgeSource(ed1);
-			String v2 = g.getEdgeTarget(ed1);
-
-			weightFeatures.put(v1 + "-" + v2,
-					pageRank.get(v1) / g.outDegreeOf(v1));
-		}
-
-		return weightFeatures;
-	}
-	
-	
-	
-	public Double signatureSimilarity(Boolean[] sequence1, Boolean[] sequence2){
-		int intersection=0;
-		for(int i=0;i<sequence1.length;i++)
-			intersection = (sequence1[i]==sequence2[i])?(intersection+1):intersection ;
-		return (Double)(intersection+ 0.0/sequence1.length);
-	}
-	
-	
-	
-
 }
 
 class ValueComparator implements Comparator<String> {
